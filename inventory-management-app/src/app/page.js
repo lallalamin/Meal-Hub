@@ -2,8 +2,9 @@
 import { Box, Typography, Stack, Button, Modal, TextField } from "@mui/material";
 import Image from "next/image";
 import { firestore } from "../../firebase";
-import { collection, doc, getDocs, query, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, query, setDoc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { get } from "firebase/database";
 
 const style = {
   position: 'absolute',
@@ -36,8 +37,30 @@ const [pantry, setPantry] = useState([]);
 
   const addItem = async (item) => {
     const docRef = doc(collection(firestore, 'pantry'), item)
-    await setDoc(docRef, {})
-    updatePantry();
+    const docSnap = await getDoc(docRef)
+    if(docSnap.exists()){
+      const {quantity} = docSnap.data()
+      await setDoc(docRef, { quantity: quantity + 1 })
+    }
+    else{
+      await setDoc(docRef, { quantity: 1 })
+    }
+    await updatePantry();
+  }
+
+  const removeItem = async (item) => {
+    const docRef = doc(collection(firestore, 'pantry'), item)
+    const docSnap = await getDoc(docRef)
+    if(docSnap.exists()){
+      const {quantity} = docSnap.data()
+      if(quantity === 1){
+        await deleteDoc(docRef)
+      }
+      else{
+        await setDoc(docRef, { quantity: quantity - 1 })
+      }
+    }
+    await updatePantry();
   }
 
   const updatePantry = async () =>{
@@ -45,7 +68,7 @@ const [pantry, setPantry] = useState([]);
     const docs = await getDocs(snapshot)
     const pantryList = []
     docs.forEach((doc) => {
-      pantryList.push(doc.id)
+      pantryList.push({name: doc.id, quantity: doc.data().quantity})
     });
     setPantry(pantryList);
   }
@@ -81,11 +104,15 @@ const [pantry, setPantry] = useState([]);
           </Typography>
         </Box>
         <Stack width="800px" height="300px" spacing={2} overflow={"auto"}>
-          {pantry.map((i) => (
-            <Box key={i} width="100%" minHeight="150px" display={"flex"} justifyContent={"center"} alignItems={"center"} bgcolor={"#f0f0f0"}>
+          {pantry.map(({name, quantity}) => (
+            <Box key={name} width="100%" minHeight="150px" display={"flex"} justifyContent={"space-between"} alignItems={"center"} bgcolor={"#f0f0f0"} paddingX={5}>
               <Typography variant={"h4"} color={"#333"} textAlign={"center"}>
-                {i.charAt(0).toUpperCase()+ i.slice(1)}
+                {name.charAt(0).toUpperCase()+ name.slice(1)}
               </Typography>
+              <Typography variant={"h4"} color={"#333"} textAlign={"center"}>
+                Quantity: {quantity}
+              </Typography>
+              <button variant="contained" onClick={() => removeItem(name)}> Remove</button>
             </Box>
           ))}
         </Stack>
