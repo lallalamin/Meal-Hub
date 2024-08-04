@@ -2,7 +2,7 @@
 import { Box, Typography, Stack, Button, Modal, TextField } from "@mui/material";
 import Image from "next/image";
 import { firestore } from "../../firebase";
-import { collection, doc, getDocs, query } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 const style = {
@@ -34,21 +34,23 @@ const [pantry, setPantry] = useState([]);
 
   const [itemName, setItemName] = useState('')
 
-  const addItem = (item) => {
-    console.log(item);
+  const addItem = async (item) => {
+    const docRef = doc(collection(firestore, 'pantry'), item)
+    await setDoc(docRef, {})
+    updatePantry();
+  }
+
+  const updatePantry = async () =>{
+    const snapshot = query(collection(firestore, "pantry"))
+    const docs = await getDocs(snapshot)
+    const pantryList = []
+    docs.forEach((doc) => {
+      pantryList.push(doc.id)
+    });
+    setPantry(pantryList);
   }
 
   useEffect(() => {
-    const updatePantry = async () =>{
-      const snapshot = query(collection(firestore, "pantry"))
-      const docs = await getDocs(snapshot)
-      const pantryList = []
-      docs.forEach((doc) => {
-        pantryList.push(doc.id)
-      });
-      setPantry(pantryList);
-    }
-
     updatePantry();
   }, [])
 
