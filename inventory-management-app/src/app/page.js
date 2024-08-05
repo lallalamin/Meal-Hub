@@ -40,9 +40,9 @@ export default function Home() {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const { quantity } = docSnap.data();
-      await setDoc(docRef, { quantity: quantity + 1, expiryDate });
+      await setDoc(docRef, { quantity: quantity + 1});
     } else {
-      await setDoc(docRef, { quantity: 1, expiryDate });
+      await setDoc(docRef, { quantity: 1});
     }
     await updatePantry();
   };
@@ -66,7 +66,7 @@ export default function Home() {
     const docs = await getDocs(snapshot);
     const pantryList = [];
     docs.forEach((doc) => {
-      pantryList.push({ name: doc.id, quantity: doc.data().quantity, expiryDate: doc.data().expiryDate });
+      pantryList.push({ name: doc.id, quantity: doc.data().quantity});
     });
     setPantry(pantryList);
   };
@@ -98,7 +98,7 @@ export default function Home() {
             />
             {/* <DateTimePicker label="Basic date time picker" /> */}
             
-            <Button variant="contained" onClick={() => { addItem(itemName); setItemName(''); setExpiryDate(null); handleClose(); }} sx={{ backgroundColor: '#e99469' }}>
+            <Button variant="contained" onClick={() => { addItem(itemName); setItemName(''); handleClose(); }} sx={{ backgroundColor: '#e99469' }}>
               Add
             </Button>
           </Box>
@@ -120,7 +120,7 @@ export default function Home() {
             <Stack width="800px" height="300px" spacing={2} overflow="auto">
               <Grid item xs={12} md={6}>
                 <List dense>
-                  {filteredPantry.map(({ name, quantity, expiryDate }) => (
+                  {filteredPantry.map(({ name, quantity }) => (
                     <ListItem key={name} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: "center", background: "#f4f7e4", marginBottom: "5px", borderRadius: "10px"}}>
                       <ListItemText
                         primary={<Typography variant="body1" sx={{ color: '#333' }}>{name.charAt(0).toUpperCase() + name.slice(1)}</Typography>}
