@@ -1,11 +1,13 @@
 "use client"
-import { Box, Typography, Stack, Button, Modal, TextField } from "@mui/material";
-import Image from "next/image";
+import { Box, Typography, Stack, Button, TextField, Grid, List, ListItem, ListItemText, IconButton } from "@mui/material";
+import { Delete as DeleteIcon } from '@mui/icons-material';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+//import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { firestore } from "../../firebase";
 import { collection, deleteDoc, doc, getDocs, query, setDoc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { get } from "firebase/database";
-import Navbar from "@/component/Navbar"
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import Navbar from "@/component/Navbar";
 
 const style = {
   position: 'absolute',
@@ -24,103 +26,105 @@ const style = {
 };
 
 export default function Home() {
-const [pantry, setPantry] = useState([]);
-
+  const [pantry, setPantry] = useState([]);
   const [open, setOpen] = useState(false);
-  const handleOpen = () => {
-    setOpen(true);
-  };
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const [itemName, setItemName] = useState('');
+  //const [expiryDate, setExpiryDate] = useState(null);
 
-  const [itemName, setItemName] = useState('')
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   const addItem = async (item) => {
-    const docRef = doc(collection(firestore, 'pantry'), item)
-    const docSnap = await getDoc(docRef)
-    if(docSnap.exists()){
-      const {quantity} = docSnap.data()
-      await setDoc(docRef, { quantity: quantity + 1 })
-    }
-    else{
-      await setDoc(docRef, { quantity: 1 })
+    const docRef = doc(collection(firestore, 'pantry'), item);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data();
+      await setDoc(docRef, { quantity: quantity + 1, expiryDate });
+    } else {
+      await setDoc(docRef, { quantity: 1, expiryDate });
     }
     await updatePantry();
-  }
+  };
 
   const removeItem = async (item) => {
-    const docRef = doc(collection(firestore, 'pantry'), item)
-    const docSnap = await getDoc(docRef)
-    if(docSnap.exists()){
-      const {quantity} = docSnap.data()
-      if(quantity === 1){
-        await deleteDoc(docRef)
-      }
-      else{
-        await setDoc(docRef, { quantity: quantity - 1 })
+    const docRef = doc(collection(firestore, 'pantry'), item);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data();
+      if (quantity === 1) {
+        await deleteDoc(docRef);
+      } else {
+        await setDoc(docRef, { quantity: quantity - 1 });
       }
     }
     await updatePantry();
-  }
+  };
 
-  const updatePantry = async () =>{
-    const snapshot = query(collection(firestore, "pantry"))
-    const docs = await getDocs(snapshot)
-    const pantryList = []
+  const updatePantry = async () => {
+    const snapshot = query(collection(firestore, "pantry"));
+    const docs = await getDocs(snapshot);
+    const pantryList = [];
     docs.forEach((doc) => {
-      pantryList.push({name: doc.id, quantity: doc.data().quantity})
+      pantryList.push({ name: doc.id, quantity: doc.data().quantity, expiryDate: doc.data().expiryDate });
     });
     setPantry(pantryList);
-  }
+  };
 
   useEffect(() => {
     updatePantry();
-  }, [])
+  }, []);
 
   return (
-    <Box>
-      <Navbar></Navbar>
-      <Box width="100vw" height="100vh" display={"flex"} justifyContent={"center"} alignItems={"center"} gap={2} flexDirection={"column"}>
-        <Modal 
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="child-modal-title"
-          aria-describedby="child-modal-description"
-        >
-          <Box sx={style}>
-            <Button onClick={handleClose}>X</Button>
-            <p id="child-modal-description">
-              Add item
-            </p>
-            <Stack width="100%" direction={"row"} gap={2}>
-              <TextField id="outline-basic" label="Item" variant="outlined" fullWidth value={itemName} onChange={(e) => setItemName(e.target.value)}>Search</TextField>
-              <Button variant="contained" onClick={()=>{addItem(itemName) ; setItemName(''); handleClose() }}>Add</Button>
+      <Box>
+        <Navbar />
+        
+        <Box width="100vw" height="100vh" display="flex" justifyContent="center" alignItems="center" gap={2} flexDirection="column">
+          <Typography variant="h5"  textAlign="center" fontWeight="bold">
+            Enter the item from your pantry
+          </Typography>
+          <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+            <TextField
+              id="outline-basic"
+              label="Add item"
+              variant="outlined"
+              fullWidth
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+            />
+            {/* <DateTimePicker label="Basic date time picker" /> */}
+            
+            <Button variant="contained" onClick={() => { addItem(itemName); setItemName(''); setExpiryDate(null); handleClose(); }} sx={{ backgroundColor: '#e99469' }}>
+              Add
+            </Button>
+          </Box>
+          <Box >
+            <Box width="800px" height="80px" bgcolor="#e99469" display="flex" justifyContent="center" alignItems="center" sx={{borderRadius: "20px"}}>
+              <Typography variant="h6" color="#ffffff" textAlign="center" fontWeight="bold">
+                Your Pantry Items
+              </Typography>
+            </Box>
+            <Stack width="800px" height="300px" spacing={2} overflow="auto">
+              <Grid item xs={12} md={6}>
+                <List dense>
+                  {pantry.map(({ name, quantity, expiryDate }) => (
+                    <ListItem key={name} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: "center", background: "#f4f7e4", marginBottom: "5px", borderRadius: "10px"}}>
+                      <ListItemText
+                        primary={<Typography variant="body1" sx={{ color: '#333' }}>{name.charAt(0).toUpperCase() + name.slice(1)}</Typography>}
+                        secondary={`Quantity: ${quantity}`}
+                      />
+                      {/* <Typography variant="body2" sx={{ color: 'gray', marginRight: 'auto', marginLeft: 'auto' }}>
+                        Expiry Date: {expiryDate ? new Date(expiryDate.seconds * 1000).toLocaleDateString() : 'N/A'}
+                      </Typography> */}
+                      <IconButton edge="end" aria-label="delete" onClick={() => removeItem(name)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItem>
+                  ))}
+                </List>
+              </Grid>
             </Stack>
           </Box>
-        </Modal>
-        <Button variant="contained" onClick={handleOpen}>ADD</Button>
-        <Box border={"1px solid #333"}>
-          <Box width="800px" height="100px" bgcolor={"#ADD8E6"} display={"flex"} justifyContent={"center"} alignItems={"center"}>
-            <Typography variant={"h2"} color={"#333"} textAlign={"center"} fontWeight={"bold"}>
-              Pantry Items
-            </Typography>
-          </Box>
-          <Stack width="800px" height="300px" spacing={2} overflow={"auto"}>
-            {pantry.map(({name, quantity}) => (
-              <Box key={name} width="100%" minHeight="150px" display={"flex"} justifyContent={"space-between"} alignItems={"center"} bgcolor={"#f0f0f0"} paddingX={5}>
-                <Typography variant={"h4"} color={"#333"} textAlign={"center"}>
-                  {name.charAt(0).toUpperCase()+ name.slice(1)}
-                </Typography>
-                <Typography variant={"h4"} color={"#333"} textAlign={"center"}>
-                  Quantity: {quantity}
-                </Typography>
-                <button variant="contained" onClick={() => removeItem(name)}> Remove</button>
-              </Box>
-            ))}
-          </Stack>
         </Box>
       </Box>
-    </Box>
   );
 }
