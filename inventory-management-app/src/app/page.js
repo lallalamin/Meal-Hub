@@ -29,6 +29,7 @@ export default function Home() {
   const [pantry, setPantry] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   //const [expiryDate, setExpiryDate] = useState(null);
 
   const handleOpen = () => setOpen(true);
@@ -70,6 +71,10 @@ export default function Home() {
     setPantry(pantryList);
   };
 
+  const filteredPantry = pantry.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   useEffect(() => {
     updatePantry();
   }, []);
@@ -103,18 +108,24 @@ export default function Home() {
                 Your Pantry Items
               </Typography>
             </Box>
+            <Box display="flex" justifyContent="flex-end" mt={2} mb={1}>
+              <TextField
+                label="Search for item"
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{ marginRight: 2 }} // Adjust margin as needed
+              />
+            </Box>
             <Stack width="800px" height="300px" spacing={2} overflow="auto">
               <Grid item xs={12} md={6}>
                 <List dense>
-                  {pantry.map(({ name, quantity, expiryDate }) => (
+                  {filteredPantry.map(({ name, quantity, expiryDate }) => (
                     <ListItem key={name} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: "center", background: "#f4f7e4", marginBottom: "5px", borderRadius: "10px"}}>
                       <ListItemText
                         primary={<Typography variant="body1" sx={{ color: '#333' }}>{name.charAt(0).toUpperCase() + name.slice(1)}</Typography>}
                         secondary={`Quantity: ${quantity}`}
                       />
-                      {/* <Typography variant="body2" sx={{ color: 'gray', marginRight: 'auto', marginLeft: 'auto' }}>
-                        Expiry Date: {expiryDate ? new Date(expiryDate.seconds * 1000).toLocaleDateString() : 'N/A'}
-                      </Typography> */}
                       <IconButton edge="end" aria-label="delete" onClick={() => removeItem(name)}>
                         <DeleteIcon />
                       </IconButton>
