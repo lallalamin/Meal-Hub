@@ -13,4 +13,4 @@ A pantry management application that allows users to keep track of pantry items 
 
 - Deploy to Vercel and use CI/CD
 
-Tool: Next.js , Vercel, Material UI 
+Tool: Next.js , Vercel, Material UI, Firebase
